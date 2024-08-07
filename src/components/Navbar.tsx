@@ -1,13 +1,36 @@
 "use client";
 
+import { useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface NavbarProps {
   session: any;
 }
 
 export default function Navbar({ session }: NavbarProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSignIn = async () => {
+    try {
+      const result = await signIn("github", { callbackUrl: "/", forceNewSession: true });
+      if (result?.error) {
+        console.error("Sign-in error:", result.error);
+      }
+    } catch (error) {
+      console.error("Sign-in exception:", error);
+    }
+    setIsOpen(false);
+  };
+
   return (
     <nav className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,7 +45,24 @@ export default function Navbar({ session }: NavbarProps) {
             {session ? (
               <Button onClick={() => signOut()}>Sign out</Button>
             ) : (
-              <Button onClick={() => signIn()}>Sign in</Button>
+              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                  <Button>Sign in</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Sign In</DialogTitle>
+                    <DialogDescription>
+                      Choose a method to sign in to your account.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col items-center space-y-4">
+                    <Button onClick={handleSignIn} className="w-full">
+                      Sign in with GitHub
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </div>
