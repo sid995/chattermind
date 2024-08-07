@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ChatList from "@/components/ChatList";
@@ -104,13 +104,21 @@ export default function ChatInterface({ session }: ChatInterfaceProps) {
     }
   };
 
+  const showPreviousChats = useMemo(() => {
+    return chats.length > 0 && session
+  }, [chats, session])
+
   return (
     <div className="w-full max-w-5xl">
       <div className="flex">
-        {session && (
-          <ChatList chats={chats} selectedChatId={selectedChatId} onChatSelect={fetchMessages} />
+        {showPreviousChats && (
+          <ChatList
+            chats={chats}
+            selectedChatId={selectedChatId}
+            onChatSelect={fetchMessages}
+          />
         )}
-        <div className={session ? "w-3/4" : "w-full"}>
+        <div className={showPreviousChats ? "w-3/4" : "w-full"}>
           <div className="bg-white shadow-md rounded-lg max-w-2xl w-full mx-auto">
             <MessageList messages={messages} />
             <form onSubmit={handleSubmit} className="p-4 border-t flex">
