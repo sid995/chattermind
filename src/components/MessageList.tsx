@@ -19,8 +19,8 @@ export default function MessageList({ messages }: MessageListProps) {
         >
           <div
             className={`${message.role === "user"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-800"
+              ? "bg-indigo-500 text-white"
+              : "bg-gray-200 text-gray-800"
               } rounded-lg p-2 max-w-xs`}
           >
             {message.content}

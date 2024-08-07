@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ChatList from "@/components/ChatList";
@@ -18,8 +17,11 @@ interface Message {
   role: "user" | "assistant";
 }
 
-export default function ChatInterface() {
-  const { data: session } = useSession();
+interface ChatInterfaceProps {
+  session: any;
+}
+
+export default function ChatInterface({ session }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -33,12 +35,14 @@ export default function ChatInterface() {
   }, [session]);
 
   const fetchChats = async () => {
+    if (!session) return;
     const response = await fetch("/api/chats");
     const data = await response.json();
     setChats(data);
   };
 
   const fetchMessages = async (chatId: string) => {
+    if (!session) return;
     const response = await fetch(`/api/messages?chatId=${chatId}`);
     const data = await response.json();
     setMessages(data);
@@ -47,23 +51,37 @@ export default function ChatInterface() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading || !session) return;
+    if (!input.trim() || isLoading) return;
 
     setMessages((prev) => [...prev, { _id: Date.now().toString(), role: "user", content: input }]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: input,
-          chatId: selectedChatId,
-        }),
-      });
+      let response;
+      if (session) {
+        response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: input,
+            chatId: selectedChatId,
+          }),
+        });
+      } else {
+        // If not authenticated, use a different endpoint that doesn't save the chat
+        response = await fetch("/api/chat-anonymous", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: input,
+          }),
+        });
+      }
 
       if (!response.ok) {
         throw new Error("Failed to fetch response");
@@ -71,8 +89,10 @@ export default function ChatInterface() {
 
       const data = await response.json();
       setMessages((prev) => [...prev, { _id: Date.now().toString(), role: "assistant", content: data.response }]);
-      setSelectedChatId(data.chatId);
-      fetchChats();
+      if (session) {
+        setSelectedChatId(data.chatId);
+        fetchChats();
+      }
     } catch (error) {
       console.error("Error:", error);
       setMessages((prev) => [
@@ -87,9 +107,11 @@ export default function ChatInterface() {
   return (
     <div className="w-full max-w-5xl">
       <div className="flex">
-        <ChatList chats={chats} selectedChatId={selectedChatId} onChatSelect={fetchMessages} />
-        <div className="w-3/4">
-          <div className="bg-white shadow-md rounded-lg max-w-lg w-full">
+        {session && (
+          <ChatList chats={chats} selectedChatId={selectedChatId} onChatSelect={fetchMessages} />
+        )}
+        <div className={session ? "w-3/4" : "w-full"}>
+          <div className="bg-white shadow-md rounded-lg max-w-2xl w-full mx-auto">
             <MessageList messages={messages} />
             <form onSubmit={handleSubmit} className="p-4 border-t flex">
               <Input
