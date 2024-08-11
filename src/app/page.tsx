@@ -10,7 +10,7 @@ export default function WelcomeScreen() {
         <h1 className="text-4xl font-bold mb-4">
           Welcome to AI Powered Context Parser
         </h1>
-        <p className="mb-4">
+        <p className="mb-4 max-w-lg text-center">
           This is an example of an AI powered context parser. We parse through
           websites to provide a better knowledge base for your AI to answer.
         </p>
