@@ -24,6 +24,7 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      dbName: "ai-chat-db",
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
