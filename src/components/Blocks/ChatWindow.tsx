@@ -6,8 +6,13 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { SendIcon } from "lucide-react";
 import RightDrawer from "./RightDrawer";
+import { useSession } from "next-auth/react";
 
 export default function ChatWindow() {
+  const { data: session } = useSession();
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const [gotMessages, setGotMessages] = useState(false);
   const [context, setContext] = useState<string[] | null>(null);
 
@@ -15,6 +20,7 @@ export default function ChatWindow() {
     useChat({
       onFinish: async () => {
         setGotMessages(true);
+        await saveMessagesToDb();
       },
     });
 
@@ -25,6 +31,26 @@ export default function ChatWindow() {
     handleSubmit(e);
     setContext(null);
     setGotMessages(false);
+  };
+
+  const saveMessagesToDb = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      await fetch("/api/save-messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: session.user.id,
+          // messages: newMessages,
+          messages: messages,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to save messages:", error);
+    }
   };
 
   useEffect(() => {
@@ -45,9 +71,9 @@ export default function ChatWindow() {
     prevMessagesLengthRef.current = messages.length;
   }, [messages, gotMessages]);
 
-  //   useEffect(() => {
-  //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  //   }, [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <div className="relative h-[calc(100vh-theme(spacing.28))] pt-12 flex flex-col max-w-3xl w-full mx-auto">
@@ -69,9 +95,14 @@ export default function ChatWindow() {
                 {message.role.charAt(0).toUpperCase() + message.role.slice(1)}
               </div>
               <div>{message.content}</div>
+              {message.createdAt && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {new Date(message.createdAt).toLocaleString()}
+                </div>
+              )}
             </div>
           ))}
-          {/* <div ref={messagesEndRef} /> */}
+          <div ref={messagesEndRef} />
         </div>
       </div>
       <form

@@ -1,19 +1,26 @@
 import { Configuration, OpenAIApi } from "openai-edge";
-import { Message, OpenAIStream, StreamingTextResponse } from "ai";
+import { Message as AIMessage, OpenAIStream, StreamingTextResponse } from "ai";
 import { getContext } from "@/lib/utils/context";
+import { auth } from "@/lib/auth/authConfig";
+import dbConnect from "@/lib/db/config/mongoose";
+import { Message } from "@/lib/db/models/Message";
+import { NextRequest } from "next/server";
+import mongoose from "mongoose";
 
-// Create an OpenAI API client (that's edge friendly!)
 const config = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(config);
 
-// IMPORTANT! Set the runtime to edge
-// export const runtime = "edge";
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    console.log(req);
+    const session = await auth();
+    if (!session || !session.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
+    }
+
     const { messages } = await req.json();
 
     // Get the last message
@@ -21,6 +28,18 @@ export async function POST(req: Request) {
 
     // Get the context from the last message
     const context = await getContext(lastMessage.content, "");
+
+    await dbConnect();
+
+    // Convert the string userId to ObjectId
+    const userId = new mongoose.Types.ObjectId(session.user.id);
+
+    // Fetch the user's previous messages
+    const messageDoc = await Message.findOne({ userId })
+      .sort({ "messages.timestamp": -1 })
+      .limit(1);
+
+    const userMessages = messageDoc ? messageDoc.messages : []; // Get last 10 messages
 
     const prompt = [
       {
@@ -40,6 +59,10 @@ export async function POST(req: Request) {
       AI assistant will not invent anything that is not drawn directly from the context.
       `,
       },
+      ...userMessages.map((msg: { role: any; content: any }) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
     ];
 
     // Ask OpenAI for a streaming chat completion given the prompt
@@ -48,7 +71,7 @@ export async function POST(req: Request) {
       stream: true,
       messages: [
         ...prompt,
-        ...messages.filter((message: Message) => message.role === "user"),
+        ...messages.filter((message: AIMessage) => message.role === "user"),
       ],
     });
     // Convert the response into a friendly text-stream
@@ -56,6 +79,9 @@ export async function POST(req: Request) {
     // Respond with the stream
     return new StreamingTextResponse(stream);
   } catch (e) {
-    throw e;
+    console.error(e);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+    });
   }
 }
