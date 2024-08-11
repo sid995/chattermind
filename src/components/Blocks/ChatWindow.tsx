@@ -6,21 +6,24 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { SendIcon } from "lucide-react";
 import RightDrawer from "./RightDrawer";
-import { useSession } from "next-auth/react";
+import { useParams } from "next/navigation";
+import { Message } from "./Message";
 
 export default function ChatWindow() {
-  const { data: session } = useSession();
-
+  const { msgId } = useParams();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [gotMessages, setGotMessages] = useState(false);
   const [context, setContext] = useState<string[] | null>(null);
+  const [title, setTitle] = useState<string | null>(null);
+  const [shouldGenerateTitle, setShouldGenerateTitle] = useState(false);
+  const [shouldSaveMessages, setShouldSaveMessages] = useState(false);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
       onFinish: async () => {
-        setGotMessages(true);
-        await saveMessagesToDb();
+        setShouldSaveMessages(true);
+        !shouldGenerateTitle && setShouldGenerateTitle(true);
       },
     });
 
@@ -33,21 +36,66 @@ export default function ChatWindow() {
     setGotMessages(false);
   };
 
-  const saveMessagesToDb = async () => {
-    if (!session?.user?.id) return;
+  // Save messages to database
+  useEffect(() => {
+    if (shouldSaveMessages && title) {
+      saveMessagesToDb();
+      setShouldSaveMessages(false);
+    }
+  }, [title, shouldSaveMessages]);
 
+  // Generate title
+  useEffect(() => {
+    if (shouldGenerateTitle && !title) {
+      generateTitle();
+    }
+  }, [shouldGenerateTitle, title]);
+
+  const generateTitle = async () => {
     try {
-      await fetch("/api/save-messages", {
+      const response = await fetch("/api/generate-title", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate title");
+      }
+
+      const { title } = await response.json();
+      setTitle(title);
+    } catch (error) {
+      console.error("Error generating title:", error);
+    }
+  };
+
+  const saveMessagesToDb = async () => {
+    try {
+      const messagesToSave = messages.map((message) => ({
+        role: message.role,
+        content: message.content,
+        createdAt: message.createdAt,
+      }));
+
+      const response = await fetch("/api/save-messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: session.user.id,
-          // messages: newMessages,
-          messages: messages,
+          messages: messagesToSave,
+          title,
+          msgId,
         }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to save messages: ${errorData.error}`);
+      }
     } catch (error) {
       console.error("Failed to save messages:", error);
     }
@@ -77,30 +125,12 @@ export default function ChatWindow() {
 
   return (
     <div className="relative h-[calc(100vh-theme(spacing.28))] pt-12 flex flex-col max-w-3xl w-full mx-auto">
+      {title && <h2 className="text-xl font-bold mb-4">{title}</h2>}
       <RightDrawer selected={context} />
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-4">
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`p-4 rounded-lg ${
-                message.role === "system"
-                  ? "bg-blue-100"
-                  : message.role === "user"
-                  ? "bg-gray-100"
-                  : "bg-green-100"
-              }`}
-            >
-              <div className="font-bold">
-                {message.role.charAt(0).toUpperCase() + message.role.slice(1)}
-              </div>
-              <div>{message.content}</div>
-              {message.createdAt && (
-                <div className="text-xs text-gray-500 mt-1">
-                  {new Date(message.createdAt).toLocaleString()}
-                </div>
-              )}
-            </div>
+            <Message message={message} key={message.id} />
           ))}
           <div ref={messagesEndRef} />
         </div>

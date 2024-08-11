@@ -4,6 +4,12 @@ import dbConnect from "@/lib/db/config/mongoose";
 import { Message } from "@/lib/db/models/Message";
 import mongoose from "mongoose";
 
+type RequestType = {
+  messages: any[];
+  title: string;
+  msgId: string;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
@@ -11,7 +17,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { messages } = await req.json();
+    const { messages, title, msgId }: RequestType = await req.json();
+    console.log({ messages, title, msgId });
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -26,10 +33,15 @@ export async function POST(req: NextRequest) {
     const userId = new mongoose.Types.ObjectId(session.user.id);
 
     // Find the existing message document for this user or create a new one
-    let messageDoc = await Message.findOne({ userId });
+    let messageDoc = await Message.findOne({ userId, msgId });
 
     if (!messageDoc) {
-      messageDoc = new Message({ userId, messages: [] });
+      messageDoc = new Message({
+        userId,
+        messages: [],
+        title,
+        msgId,
+      });
     }
 
     // Validate and add new messages to the messages array
@@ -44,7 +56,7 @@ export async function POST(req: NextRequest) {
       return {
         role: message.role,
         content: message.content,
-        timestamp: message.createdAt || new Date(),
+        createdAt: message.createdAt || new Date(),
       };
     });
 

@@ -7,6 +7,14 @@ const MessageSchema = new mongoose.Schema(
       required: true,
       ref: "User",
     },
+    title: {
+      type: String,
+      default: "Untitled Conversation",
+    },
+    msgId: {
+      type: String,
+      required: true,
+    },
     messages: [
       {
         role: {
