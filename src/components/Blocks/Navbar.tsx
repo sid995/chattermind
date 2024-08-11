@@ -1,6 +1,7 @@
 import { checkIsAuthenticated } from "@/lib/auth/checkIsAuthenticated";
 import { SignInButton } from "../Button/SignInButton";
 import { SignOutButton } from "../Button/SignoutButton";
+import { NewChatButton } from "../Button/NewChatButton";
 
 export default async function Navbar() {
   const isAuthenticated = await checkIsAuthenticated();
@@ -15,7 +16,10 @@ export default async function Navbar() {
               ChatterMind
             </span>
           </div>
-          <div>{isAuthenticated ? <SignOutButton /> : <SignInButton />}</div>
+          <div className="flex gap-2 items-center">
+            {isAuthenticated && <NewChatButton />}
+            <div>{isAuthenticated ? <SignOutButton /> : <SignInButton />}</div>
+          </div>
         </div>
       </div>
     </nav>
