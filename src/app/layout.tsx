@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Blocks/Navbar";
+import { SessionProvider } from "next-auth/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,10 +17,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} flex flex-col h-screen`}>
-        <Navbar />
-        {children}
-      </body>
+      <SessionProvider>
+        <body className={`${inter.className} flex flex-col h-screen`}>
+          {children}
+        </body>
+      </SessionProvider>
     </html>
   );
 }

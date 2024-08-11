@@ -1,9 +1,10 @@
-"use client";
+import { checkIsAuthenticated } from "@/lib/auth/checkIsAuthenticated";
+import { SignInButton } from "../Button/SignInButton";
+import { SignOutButton } from "../Button/SignoutButton";
 
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+export default async function Navbar() {
+  const isAuthenticated = await checkIsAuthenticated();
 
-export default function Navbar() {
   return (
     <nav className="bg-white shadow-md w-full h-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,15 +15,7 @@ export default function Navbar() {
               ChatterMind
             </span>
           </div>
-          <div>
-            {false ? (
-              <Button>Sign out</Button>
-            ) : (
-              <Link href="/signin" passHref>
-                <Button>Sign in</Button>
-              </Link>
-            )}
-          </div>
+          <div>{isAuthenticated ? <SignOutButton /> : <SignInButton />}</div>
         </div>
       </div>
     </nav>

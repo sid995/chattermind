@@ -6,5 +6,7 @@ import client from "@/lib/db/config/client";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   providers: [Github],
-  adapter: MongoDBAdapter(client),
+  adapter: MongoDBAdapter(client, {
+    databaseName: "ai-chat-db",
+  }),
 });
