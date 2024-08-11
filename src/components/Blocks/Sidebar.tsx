@@ -2,6 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { MoreHorizontal, MoreVertical, Trash } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { v4 as uuidv4 } from "uuid";
+import { ListItem } from "./SidebarListItem";
 
 type Chat = {
   msgId: string;
@@ -10,6 +21,9 @@ type Chat = {
 };
 
 export default function Sidebar() {
+  const router = useRouter();
+  const { msgId: paramsMsgId } = useParams();
+
   const [chats, setChats] = useState<Chat[]>([]);
 
   const fetchChats = async () => {
@@ -54,20 +68,39 @@ export default function Sidebar() {
     };
   }, []);
 
+  const handleDelete = async (msgId: string) => {
+    try {
+      const response = await fetch(`/api/delete-chat?msgId=${msgId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete chat");
+      }
+
+      setChats(chats.filter((chat) => chat.msgId !== msgId));
+
+      // Check if the deleted chat is the current one
+      if (paramsMsgId === msgId) {
+        router.push(`/chat/${uuidv4()}`);
+      }
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+    }
+  };
+
   return (
     <aside className="h-[calc(100vh-theme(spacing.16))] bg-muted w-64 border-r overflow-y-auto overflow-x-hidden">
       <nav className="flex flex-col h-full">
         <h3 className="p-4 text-lg font-medium mb-4">Previous Chats</h3>
         <div className="pr-2 pl-2 overflow-y-auto flex-1">
           {chats.map((chat) => (
-            <div key={chat.msgId}>
-              <Link
-                href={`/chat/${chat.msgId}`}
-                className="hover:bg-gray-200 hover:underline block rounded-md px-2 py-2"
-              >
-                {chat.title}
-              </Link>
-            </div>
+            <ListItem
+              key={chat.msgId}
+              chat={chat}
+              paramsMsgId={paramsMsgId}
+              handleDelete={handleDelete}
+            />
           ))}
         </div>
       </nav>
