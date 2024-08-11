@@ -19,9 +19,9 @@ const getMatchesFromEmbeddings = async (
   // Obtain a client for Pinecone
   const pinecone = new Pinecone();
 
-  const indexName: string = process.env.PINECONE_INDEX || "";
+  const indexName: string = process.env.PINECONE_INDEX_NAME || "";
   if (indexName === "") {
-    throw new Error("PINECONE_INDEX environment variable not set");
+    throw new Error("PINECONE_INDEX_NAME environment variable not set");
   }
 
   // Retrieve the list of indexes to check if expected index exists
