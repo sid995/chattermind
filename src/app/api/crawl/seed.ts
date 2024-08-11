@@ -43,6 +43,8 @@ async function seed(
     // Crawl the given URL and get the pages
     const pages = (await crawler.crawl(url)) as Page[];
 
+    console.log(pages);
+
     // Choose the appropriate document splitter based on the splitting method
     const splitter: DocumentSplitter =
       splittingMethod === "recursive"
