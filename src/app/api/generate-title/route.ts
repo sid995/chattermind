@@ -33,11 +33,11 @@ export async function POST(req: NextRequest) {
         {
           role: "system",
           content:
-            "You are a helpful assistant that generates short, simple title for conversations.",
+            "You are a helpful assistant that generates short, simple title, not more than 4 words for conversations.",
         },
         {
           role: "user",
-          content: `Generate a short, simple title for this conversation:\n\n${text}\n\nTitle:`,
+          content: `Generate a short, simple title, not more than 4 words, in the title for this conversation:\n\n${text}\n\nTitle:`,
         },
       ],
       max_tokens: 60,
@@ -51,11 +51,13 @@ export async function POST(req: NextRequest) {
       throw new Error("No choices returned from OpenAI API");
     }
 
-    const title = result.choices[0].message?.content?.trim();
+    let title = result.choices[0].message?.content?.trim();
 
     if (!title) {
       throw new Error("No title generated from OpenAI API");
     }
+
+    title = title.replace(/["]+/g, "");
 
     return NextResponse.json({ title });
   } catch (error: any) {

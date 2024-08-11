@@ -18,7 +18,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { messages, title, msgId }: RequestType = await req.json();
-    console.log({ messages, title, msgId });
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -65,11 +64,6 @@ export async function POST(req: NextRequest) {
 
     // Save the updated or new document
     await messageDoc.save();
-
-    console.log(
-      "Saved messages:",
-      JSON.stringify(messageDoc.messages, null, 2)
-    );
 
     return NextResponse.json({
       success: true,
