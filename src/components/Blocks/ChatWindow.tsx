@@ -19,13 +19,19 @@ export default function ChatWindow() {
   const [shouldGenerateTitle, setShouldGenerateTitle] = useState(false);
   const [shouldSaveMessages, setShouldSaveMessages] = useState(false);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({
-      onFinish: async () => {
-        setShouldSaveMessages(true);
-        !shouldGenerateTitle && setShouldGenerateTitle(true);
-      },
-    });
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    setMessages,
+  } = useChat({
+    onFinish: async () => {
+      setShouldSaveMessages(true);
+      !shouldGenerateTitle && setShouldGenerateTitle(true);
+    },
+  });
 
   const prevMessagesLengthRef = useRef(messages.length);
 
@@ -50,6 +56,33 @@ export default function ChatWindow() {
       generateTitle();
     }
   }, [shouldGenerateTitle, title]);
+
+  // Fetch old messages when component mounts or msgId changes
+  useEffect(() => {
+    if (msgId) {
+      fetchOldMessages();
+    }
+  }, [msgId]);
+
+  const fetchOldMessages = async () => {
+    try {
+      const response = await fetch(`/api/fetch-messages?msgId=${msgId}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch old messages");
+      }
+
+      const data = await response.json();
+      if (data.messages && data.messages.length > 0) {
+        setMessages(data.messages);
+        setTitle(data.title || null);
+      }
+    } catch (error) {
+      console.error("Error fetching old messages:", error);
+    }
+  };
 
   const generateTitle = async () => {
     try {
@@ -129,8 +162,8 @@ export default function ChatWindow() {
       <RightDrawer selected={context} />
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-4">
-          {messages.map((message) => (
-            <Message message={message} key={message.id} />
+          {messages.map((message: any) => (
+            <Message message={message} key={message?.id || message?._id} />
           ))}
           <div ref={messagesEndRef} />
         </div>
