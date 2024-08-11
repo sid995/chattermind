@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/authConfig"; // Adjust this import based on your Next-auth v5 setup
-import dbConnect from "@/lib/db/config/mongoose"; // Adjust this import based on your actual database connection file
-import { Message } from "@/lib/db/models/Message"; // We'll update this model next
+import { auth } from "@/lib/auth/authConfig";
+import dbConnect from "@/lib/db/config/mongoose";
+import { Message } from "@/lib/db/models/Message";
+import mongoose from "mongoose";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,33 +11,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { userId, messages } = await req.json();
+    const { messages } = await req.json();
 
-    if (userId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json(
+        { error: "No messages provided" },
+        { status: 400 }
+      );
     }
 
     await dbConnect();
 
-    // Save all messages
-    const savedMessages = await Promise.all(
-      messages.map(async (message: any) => {
-        const newMessage = new Message({
-          userId,
-          role: message.role,
-          content: message.content,
-        });
-        return newMessage.save();
-      })
+    // Convert the string userId to ObjectId
+    const userId = new mongoose.Types.ObjectId(session.user.id);
+
+    // Find the existing message document for this user or create a new one
+    let messageDoc = await Message.findOne({ userId });
+
+    if (!messageDoc) {
+      messageDoc = new Message({ userId, messages: [] });
+    }
+
+    // Validate and add new messages to the messages array
+    const newMessages = messages.map((message: any) => {
+      if (!message.role || !message.content) {
+        throw new Error(
+          `Invalid message format. Role and content are required. Received: ${JSON.stringify(
+            message
+          )}`
+        );
+      }
+      return {
+        role: message.role,
+        content: message.content,
+        timestamp: message.createdAt || new Date(),
+      };
+    });
+
+    // Instead of pushing, replace the entire messages array
+    messageDoc.messages = newMessages;
+
+    // Save the updated or new document
+    await messageDoc.save();
+
+    console.log(
+      "Saved messages:",
+      JSON.stringify(messageDoc.messages, null, 2)
     );
 
-    console.log(savedMessages);
-
-    return NextResponse.json({ success: true, savedMessages });
-  } catch (error) {
+    return NextResponse.json({
+      success: true,
+      savedMessages: messageDoc.messages,
+    });
+  } catch (error: any) {
     console.error("Failed to save messages:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", details: error.message },
       { status: 500 }
     );
   }

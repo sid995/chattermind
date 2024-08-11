@@ -34,11 +34,9 @@ export default function ChatWindow() {
   };
 
   const saveMessagesToDb = async () => {
-    console.log(session);
     if (!session?.user?.id) return;
 
     try {
-      const newMessages = messages.slice(prevMessagesLengthRef.current);
       await fetch("/api/save-messages", {
         method: "POST",
         headers: {
@@ -46,10 +44,10 @@ export default function ChatWindow() {
         },
         body: JSON.stringify({
           userId: session.user.id,
-          messages: newMessages,
+          // messages: newMessages,
+          messages: messages,
         }),
       });
-      prevMessagesLengthRef.current = messages.length;
     } catch (error) {
       console.error("Failed to save messages:", error);
     }
@@ -97,6 +95,11 @@ export default function ChatWindow() {
                 {message.role.charAt(0).toUpperCase() + message.role.slice(1)}
               </div>
               <div>{message.content}</div>
+              {message.createdAt && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {new Date(message.createdAt).toLocaleString()}
+                </div>
+              )}
             </div>
           ))}
           <div ref={messagesEndRef} />

@@ -1,10 +1,11 @@
 import { Configuration, OpenAIApi } from "openai-edge";
 import { Message as AIMessage, OpenAIStream, StreamingTextResponse } from "ai";
 import { getContext } from "@/lib/utils/context";
-import { auth } from "@/lib/auth/authConfig"; // Adjust this import based on your Next-auth v5 setup
-import dbConnect from "@/lib/db/config/mongoose"; // Adjust this import based on your actual database connection file
+import { auth } from "@/lib/auth/authConfig";
+import dbConnect from "@/lib/db/config/mongoose";
 import { Message } from "@/lib/db/models/Message";
 import { NextRequest } from "next/server";
+import mongoose from "mongoose";
 
 const config = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -30,10 +31,15 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
 
+    // Convert the string userId to ObjectId
+    const userId = new mongoose.Types.ObjectId(session.user.id);
+
     // Fetch the user's previous messages
-    const userMessages = await Message.find({ userId: session.user.id })
-      .sort({ createdAt: -1 })
-      .lean();
+    const messageDoc = await Message.findOne({ userId })
+      .sort({ "messages.timestamp": -1 })
+      .limit(1);
+
+    const userMessages = messageDoc ? messageDoc.messages : []; // Get last 10 messages
 
     const prompt = [
       {
@@ -53,7 +59,10 @@ export async function POST(req: NextRequest) {
       AI assistant will not invent anything that is not drawn directly from the context.
       `,
       },
-      ...userMessages.map((msg) => ({ role: msg.role, content: msg.content })),
+      ...userMessages.map((msg: { role: any; content: any }) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
     ];
 
     // Ask OpenAI for a streaming chat completion given the prompt
