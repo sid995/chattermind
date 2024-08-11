@@ -1,9 +1,5 @@
-// UrlButton.tsx
-
 import { Button } from "@/components/ui/button";
 import React, { FC } from "react";
-// import { AiOutlineLink } from "react-icons/ai";
-import Link from "next/link";
 
 export interface IUrlEntry {
   url: string;
@@ -20,7 +16,7 @@ interface IURLButtonProps {
 const UrlButton: FC<IURLButtonProps> = ({ entry, onClick }) => (
   <div key={`${entry.url}-${entry.seeded}`} className="pr-2 lg:flex-grow">
     <Button
-      className={`relative overflow-hidden w-full my-1 lg:my-2 mx-2 ${
+      className={`relative overflow-hidden w-fit my-1 lg:my-2 mx-2 ${
         entry.loading ? "shimmer" : ""
       }`}
       style={{

@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Sidebar() {
   return (
-    <aside className="bg-muted w-64 border-r absolute top-0 left-0 pt-16 h-full">
+    <aside className="bg-muted w-64 border-r h-full overflow-y-auto overflow-x-hidden">
       <nav className="p-4">
         <h3 className="text-lg font-medium mb-4">Previous Chats</h3>
         <ul className="space-y-2">

@@ -50,7 +50,7 @@ export default function ChatWindow() {
   //   }, [messages]);
 
   return (
-    <div className="h-[calc(100vh-theme(spacing.28))] flex flex-col max-w-3xl w-full">
+    <div className="relative h-[calc(100vh-theme(spacing.28))] pt-12 flex flex-col max-w-3xl w-full mx-auto">
       <RightDrawer selected={context} />
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-4">

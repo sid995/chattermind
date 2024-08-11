@@ -5,11 +5,11 @@ import Link from "next/link";
 
 export default function Navbar() {
   return (
-    <nav className="bg-white shadow-md fixed top-0 left-0 w-full h-16 z-10">
+    <nav className="bg-white shadow-md w-full h-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <NabvarIcon />
+            <NavbarIcon />
             <span className="ml-2 text-xl font-semibold text-gray-900">
               ChatterMind
             </span>
@@ -29,7 +29,7 @@ export default function Navbar() {
   );
 }
 
-function NabvarIcon() {
+function NavbarIcon() {
   return (
     <svg
       className="h-8 w-8 text-indigo-600"
