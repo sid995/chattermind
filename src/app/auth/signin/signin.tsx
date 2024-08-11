@@ -54,12 +54,12 @@ export const SignInPage = () => {
           </div>
         </CardContent>
         <CardFooter>
-          <p className="text-sm text-center w-full">
+          {/* <p className="text-sm text-center w-full">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="text-blue-500 hover:underline">
               Register here
             </Link>
-          </p>
+          </p> */}
         </CardFooter>
       </Card>
     </div>
