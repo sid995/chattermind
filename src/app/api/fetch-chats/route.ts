@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/authConfig";
 import dbConnect from "@/lib/db/config/mongoose";
 import { Message } from "@/lib/db/models/Message";
 import mongoose from "mongoose";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session || !session.user) {
@@ -17,8 +17,7 @@ export async function GET(req: NextRequest) {
 
     const chats = await Message.find({ userId })
       .select("msgId title createdAt")
-      .sort({ createdAt: -1 })
-      .limit(50); // Fetch the 50 most recent chats
+      .sort({ createdAt: -1 });
 
     return NextResponse.json({ chats });
   } catch (error: any) {
